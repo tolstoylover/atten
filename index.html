@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance Register — Roll Call</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="bunk.css">
+<link rel="stylesheet" href="calendar.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="title-block">
+      <span class="eyebrow">Roll Call · Live</span>
+      <h1>Attendance <em>Register</em></h1>
+      <div class="subdate" id="todayLabel">—</div>
+    </div>
+    <div class="header-actions">
+  <button class="icon-btn cgpa-btn" id="cgpaToggleBtn" title="CGPA Target Optimizer">
+    <span>—Σ</span> <span class="sig">CGPA</span>
+  </button>
+  
+  <!-- NEW RESULTS BUTTON -->
+  <button class="icon-btn rc-btn" id="rcToggleBtn" title="SVNIT Result Checker">
+    <span>🎓</span> <span class="sig">Results</span>
+  </button>
+
+  <button id="bkToggleBtn" class="icon-btn bk-btn" aria-label="Can I bunk? attendance buffer calculator">
+    <span class="sig">🏖️</span>BUNK
+  </button>
+  <button class="icon-btn" id="themeToggle" title="Toggle theme">🌙</button>
+</div>
+    
+  </header>
+
+  <section class="stats" aria-label="Attendance summary">
+    <div class="stat total">
+      <div class="icon">👥</div>
+      <div class="n" id="statTotal">0</div>
+      <div class="l">Total</div>
+    </div>
+    <div class="stat present">
+      <div class="icon">✓</div>
+      <div class="n" id="statPresent">0</div>
+      <div class="l">Present</div>
+    </div>
+    <div class="stat absent">
+      <div class="icon">✕</div>
+      <div class="n" id="statAbsent">0</div>
+      <div class="l">Absent</div>
+    </div>
+  </section>
+
+  <div class="progress-row">
+    <span class="progress-label">Attendance</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="progress-pct" id="progressPct">0%</span>
+  </div>
+
+  <div class="toolbar">
+    <div class="search">
+      <input type="text" id="searchInput" placeholder="Search name, roll or reg no…" autocomplete="off">
+    </div>
+    <button class="btn present-all" id="selectAllBtn">✓ Mark all present</button>
+    <button class="btn clear-all" id="clearAllBtn">Clear all</button>
+  </div>
+
+  <section class="roster">
+    <div class="roster-header">
+      <span class="rh-title">Class Roster</span>
+      <span class="rh-count" id="visibleCount">0 students</span>
+    </div>
+    <div id="roster"></div>
+    <div class="empty" id="emptyState" style="display:none">No students match your search.</div>
+  </section>
+
+  <section class="output" id="outputPanel" aria-live="polite">
+    <h2>Attendance Submitted</h2>
+    <p class="output-sub">Date and time are stamped on every submission, so this record won't get mixed up with another session.</p>
+    <div class="meta-row">
+      <div class="meta-chip"><span class="k">Date</span><span class="v" id="metaDate">—</span></div>
+      <div class="meta-chip"><span class="k">Time</span><span class="v" id="metaTime">—</span></div>
+      <div class="meta-chip"><span class="k">Present</span><span class="v" id="metaCount">0 / 0</span></div>
+    </div>
+    <div class="clip-label"><span class="dot"></span> On your clipboard</div>
+    <pre id="outputText"></pre>
+    <div class="output-actions">
+      <button class="btn ghost" id="copyAgainBtn">📋 Copy again</button>
+      <button class="btn ghost" id="exportBtn">⬇️ Export .txt</button>
+      <button class="btn ghost" id="printBtn">🖨️ Print</button>
+    </div>
+  </section>
+
+  <p class="credit">Made by <span>Aditya Kumar Sinha</span></p>
+</div>
+
+<div class="submit-bar">
+  <span class="hint"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>↵</kbd> to submit</span>
+  <button class="submit-btn" id="submitBtn">Submit Attendance</button>
+</div>
+
+<!-- ============================================================
+     CGPA TARGET OPTIMIZER (equal-weight only)
+============================================================ -->
+<div class="modal-overlay" id="cgpaModal" role="dialog" aria-modal="true" aria-labelledby="cgpaTitle">
+  <div class="modal cgx-modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="cgpaTitle">CGPA Target <em>Optimizer</em></h2>
+        <div class="cgpa-sub">Integrated M.Sc. Mathematics · your academic command center</div>
+      </div>
+      <div class="cgx-header-right">
+        <span class="cgx-saved" id="cgpaSaved">✓ Saved</span>
+        <button class="modal-close" id="closeCgpaBtn" aria-label="Close">✕</button>
+      </div>
+    </div>
+
+    <div class="modal-body cgx-body">
+
+      <!-- PLAN INPUTS -->
+      <div class="cgx-card">
+        <div class="cgx-card-top">
+          <span class="cgx-card-title">Plan inputs <em>· equal-weight CGPA</em></span>
+        </div>
+        <div class="cgx-inputs">
+          <div class="cgx-field">
+            <label for="cgpaCurrent" id="currentLabel">Current CGPA</label>
+            <input id="cgpaCurrent" inputmode="decimal" placeholder="e.g. 8.20" autocomplete="off">
+            <span class="cgx-hint" id="hintCurrent"></span>
+          </div>
+          <div class="cgx-field">
+            <label for="cgpaSemesters">Semesters passed</label>
+            <select id="cgpaSemesters"></select>
+            <span class="cgx-hint"></span>
+          </div>
+          <div class="cgx-field">
+            <label for="cgpaTotalSems">Total semesters</label>
+            <input id="cgpaTotalSems" inputmode="numeric" placeholder="10" autocomplete="off">
+            <span class="cgx-hint" id="hintTotal"></span>
+          </div>
+          <div class="cgx-field">
+            <label for="cgpaTarget">Target CGPA</label>
+            <input id="cgpaTarget" inputmode="decimal" placeholder="e.g. 9.00" autocomplete="off">
+            <span class="cgx-hint" id="hintTarget"></span>
+          </div>
+        </div>
+        <div class="cgx-presets" id="presetRow">
+          <span class="cgx-presets-lb">Goal presets</span>
+          <button class="cgx-preset" data-target="8.0">8.0</button>
+          <button class="cgx-preset" data-target="8.5">8.5</button>
+          <button class="cgx-preset" data-target="9.0">9.0</button>
+          <button class="cgx-preset" data-target="9.5">9.5</button>
+          <button class="cgx-preset" data-target="custom">Custom</button>
+        </div>
+        <div class="cgx-hist">
+          <div class="cgx-hist-head">
+            <span class="cgx-card-title">Semester history <em>(optional)</em></span>
+            <span class="cgx-hist-hint">Unlocks the actual trend line, sharper forecasts &amp; milestones</span>
+          </div>
+          <div class="cgx-hist-grid" id="histGrid"></div>
+        </div>
+      </div>
+
+      <!-- VALIDATION / GUIDANCE MESSAGES -->
+      <div class="cgx-messages" id="cgxMessages" aria-live="polite"></div>
+
+      <!-- HERO BAND -->
+      <div class="cgx-hero-band">
+        <div class="cgx-card cgx-ring-card">
+          <div class="cgx-ring-wrap">
+            <svg class="cgx-ring-svg" viewBox="0 0 120 120">
+              <defs>
+                <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" class="rg-stop-a"/><stop offset="100%" class="rg-stop-b"/>
+                </linearGradient>
+              </defs>
+              <circle class="ring-track" cx="60" cy="60" r="52" pathLength="100"/>
+              <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52" pathLength="100"/>
+            </svg>
+            <div class="cgx-ring-center">
+              <span class="cgx-ring-num" id="ringNum">—</span>
+              <span class="cgx-ring-lb">Current CGPA</span>
+              <span class="cgx-ring-pct" id="ringPct">—</span>
+              <span class="cgx-ring-pctlb">of target</span>
+            </div>
+          </div>
+          <div class="cgx-ring-meta">
+            <div class="cgx-meta-chip"><span class="k">Target</span><span class="v" id="rgTarget">—</span></div>
+            <div class="cgx-meta-chip"><span class="k">Gap</span><span class="v" id="rgGap">—</span></div>
+            <div class="cgx-meta-chip"><span class="k">Runway</span><span class="v" id="rgRunway">—</span></div>
+          </div>
+        </div>
+
+        <div class="cgx-hero-right">
+          <div class="cgx-card cgx-forecast">
+            <span class="cgx-card-title">Your forecast</span>
+            <div class="cgx-fc-row">
+              <span class="cgx-fc-num" id="fcProjected">—</span>
+              <div class="cgx-fc-side">
+                <span class="cgx-pill tone-neutral" id="fcMargin">—</span>
+                <span class="cgx-trend" id="fcTrend">—</span>
+              </div>
+            </div>
+            <p class="cgx-fc-note" id="fcNote">Add your numbers to see the projection.</p>
+          </div>
+
+          <div class="cgpa-hero cgx-required tone-neutral" id="cgpaHero">
+            <div class="cgpa-hero-num" id="cgpaRequired">—</div>
+            <div class="cgpa-hero-lbl" id="cgpaRequiredLbl">Required average SGPA</div>
+            <div class="cgx-diff" id="diffMeter"></div>
+            <div class="cgx-diff-lb" id="diffLabel">Difficulty — enter details</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROJECTION CHART -->
+      <div class="cgx-card">
+        <div class="cgx-card-top">
+          <span class="cgx-card-title">CGPA projection</span>
+          <div class="cgx-legend">
+            <span class="lg">Actual</span>
+            <span class="lg lg-proj">Projected</span>
+            <span class="lg lg-target">Target</span>
+            <span class="lg lg-band">Safe–stretch band</span>
+            <span class="lg lg-flag">Milestone</span>
+          </div>
+        </div>
+        <div class="cgx-chart-holder">
+          <div class="cgx-chart" id="projChart"></div>
+          <div class="cgx-tip" id="projTip"></div>
+        </div>
+        <p class="cgx-chart-note" id="projNote"></p>
+      </div>
+
+      <!-- SGPA BARS + URGENCY -->
+      <div class="cgx-duo">
+        <div class="cgx-card">
+          <div class="cgx-card-top">
+            <span class="cgx-card-title">Per-semester SGPA</span>
+            <div class="cgx-legend">
+              <span class="lg lg-actualbar">Actual</span>
+              <span class="lg lg-planbar">Planned</span>
+            </div>
+          </div>
+          <div class="cgx-chart-holder">
+            <div class="cgx-chart" id="sgpaChart"></div>
+            <div class="cgx-tip" id="sgpaTip"></div>
+          </div>
+          <p class="cgx-chart-note" id="sgpaNote"></p>
+        </div>
+        <div class="cgx-card">
+          <div class="cgx-card-top"><span class="cgx-card-title">Required SGPA × runway</span></div>
+          <div class="cgx-chart-holder">
+            <div class="cgx-chart" id="urgChart"></div>
+            <div class="cgx-tip" id="urgTip"></div>
+          </div>
+          <p class="cgx-chart-note">The later you slip, the harder every remaining semester must work.</p>
+        </div>
+      </div>
+
+      <!-- PACING STRATEGIES -->
+      <div class="cgx-card">
+        <div class="cgx-card-top">
+          <span class="cgx-card-title">Pacing strategies <em>· same target, three tempo profiles</em></span>
+        </div>
+        <div class="cgx-pace" id="paceGrid"></div>
+        <p class="cgx-chart-note" id="paceNote"></p>
+      </div>
+
+      <!-- SCENARIO SIMULATOR -->
+      <div class="cgx-card">
+        <div class="cgx-card-top">
+          <span class="cgx-card-title">Scenario simulator</span>
+          <div class="cgx-mini-actions">
+            <button class="btn ghost cgx-mini" id="simUseReq">Use required SGPA</button>
+            <button class="btn ghost cgx-mini" id="simClear">Clear</button>
+          </div>
+        </div>
+        <div class="cgx-sim-grid" id="simGrid"></div>
+        <div class="cgx-sim-out">
+          <div class="cgx-sim-big"><span class="k">Projected final CGPA</span><span class="v" id="simProjected">—</span></div>
+          <div class="cgx-sim-cell"><span class="k">Target</span><span class="v" id="simTarget">—</span></div>
+          <div class="cgx-sim-cell"><span class="k">Margin</span><span class="v" id="simMargin">—</span></div>
+        </div>
+        <div class="cgpa-status tone-neutral" id="simStatus">Enter expected SGPAs to simulate.</div>
+      </div>
+
+      <!-- SCENARIO CARDS -->
+      <div class="cgx-scens">
+        <div class="cgx-scen safe">
+          <span class="name">Safe</span>
+          <span class="per" id="scSafePer">—</span>
+          <span class="num" id="scSafeNum">—</span>
+          <span class="lb">Final CGPA</span>
+          <span class="cgx-pill tone-neutral" id="scSafeStatus">—</span>
+        </div>
+        <div class="cgx-scen target">
+          <span class="name">Target</span>
+          <span class="per" id="scTargetPer">—</span>
+          <span class="num" id="scTargetNum">—</span>
+          <span class="lb">Final CGPA</span>
+          <span class="cgx-pill tone-neutral" id="scTargetStatus">—</span>
+        </div>
+        <div class="cgx-scen stretch">
+          <span class="name">Stretch</span>
+          <span class="per" id="scStretchPer">—</span>
+          <span class="num" id="scStretchNum">—</span>
+          <span class="lb">Final CGPA</span>
+          <span class="cgx-pill tone-neutral" id="scStretchStatus">—</span>
+        </div>
+      </div>
+
+      <!-- FEASIBILITY + INSIGHTS -->
+      <div class="cgx-duo">
+        <div class="cgx-card">
+          <span class="cgx-card-title">Target feasibility</span>
+          <div class="cgx-feas-grid">
+            <div class="cgx-fchip"><span class="k">Max possible CGPA</span><span class="v" id="feasMax">—</span></div>
+            <div class="cgx-fchip"><span class="k">Required avg SGPA</span><span class="v" id="feasReq">—</span></div>
+            <div class="cgx-fchip"><span class="k">CGPA gap</span><span class="v" id="feasGap">—</span></div>
+            <div class="cgx-fchip"><span class="k">Remaining</span><span class="v" id="feasLeft">—</span></div>
+          </div>
+          <p class="cgx-feas-text" id="feasText">—</p>
+        </div>
+        <div class="cgx-card">
+          <span class="cgx-card-title">Strategy insights</span>
+          <ul class="cgx-insights" id="insightList"></ul>
+        </div>
+      </div>
+
+      <!-- MILESTONES -->
+      <div class="cgx-card">
+        <div class="cgx-card-top">
+          <span class="cgx-card-title">Milestones <em>· also flagged on the projection chart</em></span>
+          <div class="cgx-ms-add">
+            <input id="msInput" inputmode="decimal" placeholder="e.g. 8.75" aria-label="New milestone CGPA">
+            <button class="btn ghost cgx-mini" id="msAdd">Add</button>
+          </div>
+        </div>
+        <div class="cgx-ms-list" id="msList"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- ================================================================
+     SVNIT RESULT CHECKER MODAL
+     ================================================================ -->
+<div class="modal-overlay" id="rcModal">
+  <div class="modal rc-modal">
+    <div class="modal-header">
+      <h2>🎓 SVNIT <em>Results</em></h2>
+      <button class="modal-close" id="rcCloseBtn" title="Close">✕</button>
+    </div>
+    <div class="modal-body rc-body">
+      <div class="rc-toolbar">
+        <div class="rc-search-box">
+          <input type="text" id="rcSearchInput" placeholder="Search by year, keyword…" />
+        </div>
+        <select class="rc-filter-select" id="rcYearFilter">
+          <option value="all">All years</option>
+        </select>
+        <button class="btn rc-btn-ghost" id="rcMarkAllBtn">✓ Mark all seen</button>
+      </div>
+      <div class="rc-stats" id="rcStatsBar"><span>Loading…</span></div>
+      <div class="rc-info-banner">
+        <span>🔄</span>
+        <div>
+          <strong>Last checked:</strong> <span id="rcLastUpdated">loading…</span> ·
+          Source: <a href="https://www.svnit.ac.in/web/student_notice.php" target="_blank" rel="noopener">svnit.ac.in</a>
+        </div>
+      </div>
+      <main class="rc-results-container" id="rcResultsContainer">
+        <div class="rc-loading"><div class="rc-spinner"></div><div>Fetching results…</div></div>
+      </main>
+    </div>
+    <div class="rc-footer">
+      <span>Auto-synced from <a href="https://github.com/tolstoylover/svnit-result-checker" target="_blank" rel="noopener">GitHub</a></span>
+      <span id="rcSeenCounter"></span>
+    </div>
+  </div>
+</div>
+<!-- ═══════════════ CAN I BUNK? MODAL ═══════════════ -->
+<div class="modal-overlay" id="bkModal">
+  <div class="modal bk-modal" role="dialog" aria-modal="true" aria-labelledby="bkModalTitle">
+    <div class="modal-header">
+      <div>
+        <h2 id="bkModalTitle">Can I <em>bunk?</em></h2>
+        <div class="cgpa-sub">SAFE ≥75% · GRADE DOWN 60–75% · DANGER &lt;60%</div>
+      </div>
+      <button class="modal-close" id="bkCloseBtn" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body bk-body" id="bkBody"></div>
+  </div>
+</div>
+<div class="rc-toast" id="rcToast"></div>
+<div class="toast" id="toast" role="status"></div>
+<script src="index.js"></script>
+<script src="bunk.js"></script>
+
+</body>
+</html>
